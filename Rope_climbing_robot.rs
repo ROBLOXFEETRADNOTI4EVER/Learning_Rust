@@ -11,7 +11,7 @@ use esp_hal::timer::timg::TimerGroup;
 use esp_println::println;
 use esp_wifi::wifi::event::StaAuthmodeChange;
 use log::info;
-
+use tiny_rng::{Rand, Rng};
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
@@ -35,8 +35,8 @@ async fn main(spawner: Spawner) {
     esp_alloc::heap_allocator!(size: 72 * 1024);
 
 
-    const SSID: &str = "Servo";
-const PASSWORD: &str = "fasz123@";
+//     const SSID: &str = "Servo";
+// const PASSWORD: &str = "fasz123@";
     let timer0 = TimerGroup::new(peripherals.TIMG1);
     esp_hal_embassy::init(timer0.timer0);
 
@@ -49,7 +49,7 @@ const PASSWORD: &str = "fasz123@";
     )
     .unwrap();
 
-    let mut led: Output<'_> = Output::new(peripherals.GPIO2, Level::Low,OutputConfig::default());
+    // let mut led: Output<'_> = Output::new(peripherals.GPIO2, Level::Low,OutputConfig::default());
     let mut motor: Output<'_> = Output::new(peripherals.GPIO23, Level::Low,OutputConfig::default());
     let mut motor_1: Output<'_> = Output::new(peripherals.GPIO32, Level::Low, OutputConfig::default());
         let mut motor_2: Output<'_> = Output::new(peripherals.GPIO33, Level::Low, OutputConfig::default());
@@ -68,62 +68,95 @@ const PASSWORD: &str = "fasz123@";
     let _ = spawner;
 
     let mut move_right: bool = true; // Direction state
-
-    loop {
+    let mut rng = Rng::from_seed(12345);
+// make a boolean like flip it if number is even and otherwise fasle yeah and it does it actives crazy mode 
+      loop {
+// let timeout: u8 =  (rng.rand_u8() + 1 / 2 ); 
         // stop everything first
         motor_1.set_low();         
         motor_2.set_low();         
         motor_3.set_low();         
         motor_4.set_low();         
-    
+        // motor.set_high();
+        motor.set_high();
         if ir_sensor_front.is_low() {
             info!("Front detected - Moving LEFT");
+            motor.set_high();
+
+            // let value: u8 =  (rng.rand_u8() + 1 / 2 );
+            
+            // if value % 2 == 0{
+            //     info!(" Even {value}");
+
+            // }  else{
+            //     info!(" Odd {value}");
+
+            // }
+
+
+            // to do make it so it moves and stops randomly and wats randomly
+            // stoping is moving and stoping  at pre positions  and waiint rnadom time
+    
             move_right = false;
             
-            motor.set_low();           // relay on
-            
+            // motor.set_low();           // relay on
+            motor_1.set_low();         
+            motor_2.set_low();         
+            motor_3.set_low();         
+            motor_4.set_low();         
+            Timer::after(Duration::from_secs((rng.rand_u8() % 15 + 1) as u64)).await;
+    
             // left turn - motors spin opposite ways
             motor_1.set_high();        
             motor_2.set_low();         
             motor_3.set_high();        
-            motor_4.set_low();         
-            
+            motor_4.set_low();     
+            motor.set_high();
+
         } else if ir_sensor_back.is_low() {
             info!("Back detected - Moving RIGHT");  
             move_right = true;
             
-            motor.set_low();           // relay on
-            
-            // right turn - flip motor directions
+                    // stop everything first
+        motor_1.set_low();         
+        motor_2.set_low();         
+        motor_3.set_low();         
+        motor_4.set_low();         
+        Timer::after(Duration::from_secs((rng.rand_u8() % 15 + 1) as u64)).await;
+        // right turn - flip motor directions
             motor_1.set_low();         
             motor_2.set_high();        
             motor_3.set_low();         
             motor_4.set_high();        
-            
+            motor.set_high();
+ 
         } else {
             info!("No detection - Keep moving in current direction");
-            
-            motor.set_low();           // keep power on
+
             
             if move_right {
-                // keep going right
+//                 motor.set_high();
+
                 motor_1.set_low();     
                 motor_2.set_high();    
                 motor_3.set_low();     
-                motor_4.set_high();    
+                motor_4.set_high();  
+                // keep going right
             } else {
                 // keep going left
+//                 motor.set_high();
+
                 motor_1.set_high();    
                 motor_2.set_low();     
                 motor_3.set_high();    
                 motor_4.set_low();     
             }
         }
-        
         Timer::after(Duration::from_millis(50)).await;
     }
     
     
     
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.0.0-beta.0/examples/src/bin
+
 }
