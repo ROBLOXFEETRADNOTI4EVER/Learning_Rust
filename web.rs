@@ -1,15 +1,17 @@
 use embassy_net::Stack;
 use embassy_time::Duration;
 use esp_alloc as _;
-use picoserve::{response::File, routing, AppBuilder, AppRouter, Router};
-
+use picoserve::{response::{File, IntoResponse}, routing, AppBuilder, AppRouter, Router};
+use core::{include_str, sync::atomic::Ordering};
 pub struct  Application;
 impl AppBuilder for Application {
     type PathRouter = impl routing::PathRouter;
     fn build_app(self) -> picoserve::Router<Self::PathRouter> {
         picoserve::Router::new().route(
             "/", 
-        routing::get_service(File::html(include_str!("index.html"))))
+        routing::get_service(File::html(include_str!("index.html"))),
+    )
+    .route("/led", routing::post(led_handler))
     }
 }
 
@@ -19,7 +21,15 @@ pub struct  WebApp{
     pub router: &'static Router<<Application as AppBuilder>::PathRouter>,
     pub config: &'static picoserve::Config<Duration>,
 }
+#[derive(serde::Deserialize)]
+struct LedRequest {
+    is_on: bool,
+}
 
+#[derive(serde::Serialize)]
+struct LedResponse {
+    success: bool,
+}
 impl Default for WebApp{
     fn default() -> Self {
         let router = picoserve::make_static!(AppRouter<Application>, Application.build_app());
@@ -37,6 +47,12 @@ impl Default for WebApp{
     }
     
 }
+async fn led_handler(input: picoserve::extract::Json<LedRequest, 0>) -> impl IntoResponse {
+    crate::led::LED_STATE.store(input.0.is_on, Ordering::Relaxed);
+
+    picoserve::response::Json(LedResponse { success: true })
+}
+
 #[embassy_executor::task(pool_size = WEB_TASK_POOL_SIZE)]
 pub async fn web_task(
     id: usize,
@@ -51,3 +67,6 @@ pub async fn web_task(
     picoserve::listen_and_serve(
         id, router, config, stack, port, &mut tcp_rx_buffer,&mut  tcp_tx_buffer,&mut  http_buffer).await
 }
+
+
+
