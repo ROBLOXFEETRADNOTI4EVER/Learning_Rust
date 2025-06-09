@@ -3,7 +3,8 @@
 
 pub mod web;
 pub mod wifi;
-
+pub mod led;
+pub mod piezo;
 #[macro_export]
 macro_rules! mk_static {
     ($t:ty,$val:expr) => {{

@@ -11,6 +11,7 @@ impl AppBuilder for Application {
             "/", 
         routing::get_service(File::html(include_str!("index.html"))),
     )
+    .route("/piezo", routing::post(piezo_handler))
     .route("/led", routing::post(led_handler))
     }
 }
@@ -26,8 +27,20 @@ struct LedRequest {
     is_on: bool,
 }
 
+
+
 #[derive(serde::Serialize)]
 struct LedResponse {
+    success: bool,
+}
+
+#[derive(serde::Deserialize)]
+struct PiezoRequest {
+    is_on: bool,
+}
+#[derive(serde::Serialize)]
+
+struct PiezoResponse{
     success: bool,
 }
 impl Default for WebApp{
@@ -47,12 +60,18 @@ impl Default for WebApp{
     }
     
 }
+
+async fn piezo_handler(input: picoserve::extract::Json<PiezoRequest, 0>) -> impl IntoResponse {
+    crate::piezo::PIEZO_STATE.store(input.0.is_on, Ordering::Relaxed);
+
+    picoserve::response::Json(PiezoResponse { success: true })
+}
+
 async fn led_handler(input: picoserve::extract::Json<LedRequest, 0>) -> impl IntoResponse {
     crate::led::LED_STATE.store(input.0.is_on, Ordering::Relaxed);
 
     picoserve::response::Json(LedResponse { success: true })
 }
-
 #[embassy_executor::task(pool_size = WEB_TASK_POOL_SIZE)]
 pub async fn web_task(
     id: usize,

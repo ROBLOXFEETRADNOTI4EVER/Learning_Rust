@@ -9,8 +9,8 @@ use esp_wifi::EspWifiController;
 
 use crate::mk_static;
 
-const SSID: &str = env!("SSID");
-const PASSWORD: &str = env!("PASSWORD");
+const SSID: &str = "asd";
+const PASSWORD: &str = "sad";
 #[embassy_executor::task]
 async fn connection_task(mut controller: WifiController<'static>) {
     println!("start connection task");
