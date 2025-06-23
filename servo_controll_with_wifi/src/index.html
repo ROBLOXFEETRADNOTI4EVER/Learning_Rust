@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦀 ESP32 WiFi Configuration</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --rust-orange: #f74c00;
+            --rust-dark: #ce422b;
+            --rust-gold: #daa520;
+            --rust-black: #1a1a1a;
+            --rust-gray: #2b2b2b;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--rust-black) 0%, var(--rust-gray) 100%);
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .wifi-card {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--rust-orange);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(247, 76, 0, 0.3);
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .card-header {
+            background: linear-gradient(45deg, var(--rust-orange), var(--rust-dark));
+            color: white;
+            border-radius: 13px 13px 0 0 !important;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .rust-logo {
+            font-size: 3rem;
+            animation: bounce 2s infinite;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-subtitle {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-label {
+            color: var(--rust-orange);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--rust-gray);
+            border-radius: 8px;
+            color: white;
+            padding: 0.75rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--rust-orange);
+            box-shadow: 0 0 15px rgba(247, 76, 0, 0.3);
+            color: white;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-rust {
+            background: linear-gradient(45deg, var(--rust-orange), var(--rust-dark));
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(247, 76, 0, 0.4);
+            width: 100%;
+        }
+
+        .btn-rust:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(247, 76, 0, 0.6);
+            color: white;
+        }
+
+        .btn-rust:active {
+            transform: translateY(0);
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: rgba(40, 167, 69, 0.2);
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .status-error {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .status-info {
+            background: rgba(218, 165, 32, 0.2);
+            border: 1px solid var(--rust-gold);
+            color: var(--rust-gold);
+        }
+
+        .input-group-text {
+            background: var(--rust-gray);
+            border: 2px solid var(--rust-gray);
+            color: var(--rust-orange);
+        }
+
+        .info-section {
+            background: rgba(247, 76, 0, 0.1);
+            border: 1px solid var(--rust-orange);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section h6 {
+            color: var(--rust-gold);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-section small {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.4;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 576px) {
+            .container {
+                padding: 0.5rem;
+            }
+            
+            .wifi-card {
+                margin: 0.5rem;
+            }
+            
+            .card-header {
+                padding: 1.5rem 1rem;
+            }
+            
+            .rust-logo {
+                font-size: 2.5rem;
+            }
+            
+            .card-title {
+                font-size: 1.25rem;
+            }
+        }
+
+        /* Touch improvements */
+        @media (hover: none) {
+            .btn-rust:hover {
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="wifi-card">
+            <div class="card-header">
+                <div class="rust-logo">🦀</div>
+                <h2 class="card-title">ESP32 WiFi Setup</h2>
+                <p class="card-subtitle">Configure your WiFi connection</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <div class="info-section">
+                    <h6><i class="fas fa-info-circle"></i> Instructions</h6>
+                    <small>
+                        Enter your WiFi network credentials below. After submitting, 
+                        the device will connect to your network and restart automatically.
+                    </small>
+                </div>
+
+                <form id="wifiForm">
+                    <div class="mb-3">
+                        <label for="ssid" class="form-label">
+                            <i class="fas fa-wifi"></i> Network Name (SSID)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-network-wired"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="ssid" 
+                                name="ssid" 
+                                placeholder="Enter WiFi network name"
+                                maxlength="31"
+                                required
+                            >
+                        </div>
+                        <small class="text-muted">Maximum 31 characters</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i> Password
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-key"></i>
+                            </span>
+                            <input 
+                                type="password" 
+                                class="form-control" 
+                                id="password" 
+                                name="password" 
+                                placeholder="Enter WiFi password"
+                                maxlength="31"
+                            >
+                            <button 
+                                class="btn btn-outline-secondary" 
+                                type="button" 
+                                id="togglePassword"
+                                style="border-color: var(--rust-gray); color: var(--rust-orange);"
+                            >
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Maximum 31 characters (leave blank for open networks)</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-rust" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Connect to WiFi
+                    </button>
+                </form>
+
+                <div id="statusMessage" class="status-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('wifiForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('password');
+
+            // Toggle password visibility
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                icon.classList.toggle('fa-eye');
+                icon.classList.toggle('fa-eye-slash');
+            });
+
+            // Show status message
+            function showStatus(message, type) {
+                statusMessage.textContent = message;
+                statusMessage.className = `status-message status-${type}`;
+                statusMessage.style.display = 'block';
+            }
+
+            // Hide status message
+            function hideStatus() {
+                statusMessage.style.display = 'none';
+            }
+
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const ssid = document.getElementById('ssid').value.trim();
+                const password = document.getElementById('password').value;
+
+                // Validation
+                if (!ssid) {
+                    showStatus('⚠️ Please enter a network name (SSID)', 'error');
+                    return;
+                }
+
+                if (ssid.length > 31) {
+                    showStatus('⚠️ Network name too long (max 31 characters)', 'error');
+                    return;
+                }
+
+                if (password.length > 31) {
+                    showStatus('⚠️ Password too long (max 31 characters)', 'error');
+                    return;
+                }
+
+                // Update button state
+                const originalHtml = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner loading"></i> Connecting...';
+                submitBtn.disabled = true;
+                hideStatus();
+
+                try {
+                    const response = await fetch('/post-wifi', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ssid: ssid,
+                            password: password
+                        })
+                    });
+
+                    if (response.ok) {
+                        showStatus('✅ WiFi credentials saved! Device is restarting...', 'success');
+                        
+                        // Show connection progress
+                        setTimeout(() => {
+                            showStatus('🔄 Connecting to your WiFi network...', 'info');
+                        }, 2000);
+                        
+                        setTimeout(() => {
+                            showStatus('🎉 Connected! You can now close this page.', 'success');
+                        }, 8000);
+                        
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showStatus('❌ Failed to save WiFi credentials. Please try again.', 'error');
+                    
+                    // Restore button
+                    submitBtn.innerHTML = originalHtml;
+                    submitBtn.disabled = false;
+                }
+            });
+
+            // Auto-focus first input on mobile
+            if (window.innerWidth > 768) {
+                document.getElementById('ssid').focus();
+            }
+        });
+    </script>
+</body>
+</html>

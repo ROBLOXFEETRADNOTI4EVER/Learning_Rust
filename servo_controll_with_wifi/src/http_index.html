@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦀 Piezo & Servo Control Dashboard 🦀</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #ce422b 0%, #f74c00 50%, #daa520 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            padding: clamp(1rem, 4vw, 2rem);
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid #f74c00;
+            position: relative;
+            z-index: 10;
+        }
+
+        .rust-logo {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        .main-title {
+            font-size: clamp(2rem, 7vw, 3.5rem);
+            font-weight: bold;
+            color: #f74c00;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            color: #daa520;
+            margin-bottom: 2rem;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        /* Control Section Styles */
+        .control-section {
+            background: linear-gradient(45deg, #2b2b2b, #1a1a1a);
+            padding: clamp(1.5rem, 4vw, 2.5rem);
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 2px solid #f74c00;
+        }
+
+        .section-title {
+            color: #f74c00;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 44px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: 0.4s;
+            border-radius: 44px;
+            border: 2px solid #666;
+        }
+
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 34px;
+            width: 34px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #fff;
+            transition: 0.4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        input:checked + .slider-toggle {
+            background-color: #f74c00;
+            border-color: #ce422b;
+        }
+
+        input:focus + .slider-toggle {
+            box-shadow: 0 0 8px #f74c00;
+        }
+
+        input:checked + .slider-toggle:before {
+            transform: translateX(36px);
+            background-color: #fff;
+        }
+
+        .toggle-status {
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            font-weight: bold;
+            color: #daa520;
+            margin: 1rem 0;
+            min-height: 2rem;
+        }
+
+        .status-off {
+            color: #666;
+        }
+
+        .status-on {
+            color: #f74c00;
+            text-shadow: 0 0 10px rgba(247, 76, 0, 0.5);
+        }
+
+        /* Servo Slider Styles */
+        .servo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .servo-slider {
+            -webkit-appearance: none;
+            width: 300px;
+            height: 15px;
+            border-radius: 7px;
+            background: #333;
+            outline: none;
+            border: 2px solid #666;
+            transition: 0.3s;
+        }
+
+        .servo-slider:hover {
+            border-color: #f74c00;
+        }
+
+        .servo-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f74c00;
+            cursor: pointer;
+            border: 2px solid #ce422b;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+
+        .servo-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(247, 76, 0, 0.6);
+        }
+
+        .servo-slider::-moz-range-thumb {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f74c00;
+            cursor: pointer;
+            border: 2px solid #ce422b;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .servo-display {
+            background: rgba(247, 76, 0, 0.1);
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            border: 2px solid #f74c00;
+            color: #fff;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            font-weight: bold;
+            min-width: 150px;
+        }
+
+        .angle-value {
+            color: #f74c00;
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            text-shadow: 0 0 10px rgba(247, 76, 0, 0.5);
+        }
+
+        /* IP Address Display */
+        .ip-display {
+            background: rgba(247, 76, 0, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #f74c00;
+            margin: 1rem 0;
+        }
+
+        .ip-label {
+            color: #daa520;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            margin-bottom: 0.5rem;
+        }
+
+        .ip-value {
+            color: #fff;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        /* Button Styles */
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .celebration-btn {
+            background: linear-gradient(45deg, #f74c00, #ce422b);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 4px 12px rgba(247, 76, 0, 0.4);
+            min-width: 200px;
+            min-height: 48px;
+        }
+
+        .celebration-btn:hover,
+        .celebration-btn:focus {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(247, 76, 0, 0.6);
+            outline: 2px solid #daa520;
+        }
+
+        .celebration-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.off {
+            background-color: #666;
+            animation: none;
+        }
+
+        .status-indicator.on {
+            background-color: #f74c00;
+            box-shadow: 0 0 10px rgba(247, 76, 0, 0.8);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-8px); }
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0;
+                padding: 1rem;
+            }
+            
+            .toggle {
+                width: 100px;
+                height: 54px;
+            }
+            
+            .slider-toggle:before {
+                height: 44px;
+                width: 44px;
+            }
+            
+            input:checked + .slider-toggle:before {
+                transform: translateX(46px);
+            }
+            
+            .servo-slider {
+                width: 250px;
+            }
+            
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .celebration-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .toggle-container, .servo-container {
+                gap: 1.5rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            .rust-logo,
+            .status-indicator {
+                animation: none;
+            }
+            
+            .celebration-btn:hover {
+                transform: none;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: " ⏳";
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="rust-logo">🦀</div>
+        <h1 class="main-title">Piezo & Servo Control</h1>
+        <p class="subtitle">Control your piezo buzzer and servo motor with style!</p>
+
+        <!-- Piezo Control Section -->
+        <div class="control-section">
+            <h2 class="section-title">🔊 Piezo Buzzer Control</h2>
+            
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="checkbox" id="piezoToggle">
+                    <span class="slider-toggle"></span>
+                </label>
+                
+                <div class="toggle-status" id="toggleStatus">
+                    <span class="status-indicator off" id="statusIndicator"></span>
+                    <span id="statusText">OFF</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Servo Control Section -->
+        <div class="control-section">
+            <h2 class="section-title">🔧 Servo Motor Control</h2>
+            
+            <div class="servo-container">
+                <input type="range" min="0" max="180" value="90" class="servo-slider" id="servoSlider">
+                
+                <div class="servo-display">
+                    Angle: <span class="angle-value" id="angleValue">90</span>°
+                </div>
+            </div>
+        </div>
+
+        <div class="ip-display">
+            <div class="ip-label">Your IP Address:</div>
+            <div class="ip-value" id="clientIP">Detecting...</div>
+        </div>
+
+        <div class="button-container">
+            <button class="celebration-btn" onclick="testPiezo()">🎵 TEST PIEZO 🎵</button>
+            <button class="celebration-btn" onclick="testServo()">🔧 TEST SERVO 🔧</button>
+            <button class="celebration-btn" onclick="showStatus()">📊 SHOW STATUS 📊</button>
+        </div>
+    </div>
+
+    <script>
+        let piezoToggle = document.getElementById('piezoToggle');
+        let statusText = document.getElementById('statusText');
+        let statusIndicator = document.getElementById('statusIndicator');
+        let clientIPElement = document.getElementById('clientIP');
+        let servoSlider = document.getElementById('servoSlider');
+        let angleValue = document.getElementById('angleValue');
+        
+        // Get client IP address
+        async function getClientIP() {
+            try {
+                // Try multiple IP detection services
+                const ipServices = [
+                    'https://api.ipify.org?format=json',
+                    'https://ipapi.co/json/',
+                    'https://jsonip.com'
+                ];
+                
+                for (let service of ipServices) {
+                    try {
+                        const response = await fetch(service);
+                        const data = await response.json();
+                        const ip = data.ip || data.IPv4 || data.query;
+                        if (ip) {
+                            clientIPElement.textContent = ip;
+                            return ip;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                // Fallback to extracting from URL if available
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlIP = urlParams.get('ip');
+                if (urlIP) {
+                    clientIPElement.textContent = urlIP;
+                    return urlIP;
+                }
+                
+                clientIPElement.textContent = 'Unable to detect';
+            } catch (error) {
+                clientIPElement.textContent = 'Detection failed';
+            }
+        }
+
+        // Initialize IP detection
+        getClientIP();
+
+        // Piezo toggle handler
+        piezoToggle.addEventListener('change', async function() {
+            const isOn = this.checked;
+            const clientIP = clientIPElement.textContent;
+            
+            // Update UI immediately for responsiveness
+            updateToggleUI(isOn, true);
+            
+            try {
+                const response = await fetch('/piezo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        is_on: isOn
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updateToggleUI(isOn, false);
+                    console.log(`Piezo ${isOn ? 'ON' : 'OFF'} - IP: ${clientIP}`);
+                } else {
+                    // Revert toggle if request failed
+                    this.checked = !isOn;
+                    updateToggleUI(!isOn, false);
+                    alert('Failed to toggle piezo. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error toggling piezo:', error);
+                // Revert toggle if request failed
+                this.checked = !isOn;
+                updateToggleUI(!isOn, false);
+                alert('Connection error. Please check your network.');
+            }
+        });
+
+        // Servo slider handler
+        servoSlider.addEventListener('input', function() {
+            angleValue.textContent = this.value;
+        });
+
+        servoSlider.addEventListener('change', async function() {
+            const angle = this.value;
+            
+            try {
+                const response = await fetch('/servo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        angle: angle.toString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log(`Servo angle set to ${angle}°`);
+                } else {
+                    alert('Failed to set servo angle. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error setting servo angle:', error);
+                alert('Connection error. Please check your network.');
+            }
+        });
+
+        function updateToggleUI(isOn, isLoading = false) {
+            if (isLoading) {
+                statusText.className = 'loading';
+                statusText.textContent = isOn ? 'TURNING ON' : 'TURNING OFF';
+                statusIndicator.className = 'status-indicator';
+            } else {
+                statusText.className = '';
+                statusText.textContent = isOn ? 'ON' : 'OFF';
+                statusIndicator.className = `status-indicator ${isOn ? 'on' : 'off'}`;
+            }
+        }
+
+        async function testPiezo() {
+            // Quick on/off test
+            if (!piezoToggle.checked) {
+                piezoToggle.checked = true;
+                piezoToggle.dispatchEvent(new Event('change'));
+                
+                setTimeout(() => {
+                    piezoToggle.checked = false;
+                    piezoToggle.dispatchEvent(new Event('change'));
+                }, 1000);
+            }
+        }
+
+        async function testServo() {
+            // Servo sweep test: 0° -> 180° -> 90°
+            const originalAngle = servoSlider.value;
+            
+            // Move to 0°
+            servoSlider.value = 0;
+            angleValue.textContent = '0';
+            servoSlider.dispatchEvent(new Event('change'));
+            
+            setTimeout(() => {
+                // Move to 180°
+                servoSlider.value = 180;
+                angleValue.textContent = '180';
+                servoSlider.dispatchEvent(new Event('change'));
+                
+                setTimeout(() => {
+                    // Return to center
+                    servoSlider.value = 90;
+                    angleValue.textContent = '90';
+                    servoSlider.dispatchEvent(new Event('change'));
+                }, 1000);
+            }, 1000);
+        }
+
+        async function showStatus() {
+            try {
+                const ip = clientIPElement.textContent;
+                const servoAngle = servoSlider.value;
+                const piezoStatus = piezoToggle.checked;
+                
+                alert(`System Status:\n` +
+                      `Piezo: ${piezoStatus ? 'ON' : 'OFF'}\n` +
+                      `Servo Angle: ${servoAngle}°\n` +
+                      `Your IP: ${ip}\n` +
+                      `Time: ${new Date().toLocaleString()}`);
+            } catch (error) {
+                alert('Failed to get status. Please try again.');
+            }
+        }
+
+        // Handle touch events for mobile
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.classList.contains('celebration-btn')) {
+                e.preventDefault();
+            }
+        });
+
+        // Update status on page load
+        window.addEventListener('load', async () => {
+            try {
+                // Try to get initial status if endpoint exists
+                const response = await fetch('/status');
+                const status = await response.json();
+                if (status.piezo !== undefined) {
+                    piezoToggle.checked = status.piezo;
+                    updateToggleUI(status.piezo);
+                }
+                if (status.servo_angle !== undefined) {
+                    servoSlider.value = status.servo_angle;
+                    angleValue.textContent = status.servo_angle;
+                }
+            } catch (error) {
+                console.log('Could not fetch initial status');
+            }
+        });
+    </script>
+</body>
+</html>
