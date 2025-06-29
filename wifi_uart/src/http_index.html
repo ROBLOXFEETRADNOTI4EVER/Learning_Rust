@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦀 GPS Servo Tracking System 🦀</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #ce422b 0%, #f74c00 50%, #daa520 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+            padding: clamp(1rem, 4vw, 2rem);
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 2px solid #f74c00;
+            position: relative;
+            z-index: 10;
+        }
+
+        .rust-logo {
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+
+        .main-title {
+            font-size: clamp(2rem, 7vw, 3.5rem);
+            font-weight: bold;
+            color: #f74c00;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            color: #daa520;
+            margin-bottom: 2rem;
+            font-style: italic;
+            line-height: 1.4;
+        }
+
+        /* Control Section Styles */
+        .control-section {
+            background: linear-gradient(45deg, #2b2b2b, #1a1a1a);
+            padding: clamp(1.5rem, 4vw, 2.5rem);
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 2px solid #f74c00;
+        }
+
+        .section-title {
+            color: #f74c00;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* Servo Control Styles */
+        .servo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .servo-control {
+            background: rgba(247, 76, 0, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #666;
+        }
+
+        .servo-label {
+            color: #daa520;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .servo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .servo-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            max-width: 250px;
+            height: 12px;
+            border-radius: 6px;
+            background: #333;
+            outline: none;
+            border: 2px solid #666;
+            transition: 0.3s;
+        }
+
+        .servo-slider:hover {
+            border-color: #f74c00;
+        }
+
+        .servo-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #f74c00;
+            cursor: pointer;
+            border: 2px solid #ce422b;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+
+        .servo-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(247, 76, 0, 0.6);
+        }
+
+        .servo-slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #f74c00;
+            cursor: pointer;
+            border: 2px solid #ce422b;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .servo-display {
+            background: rgba(247, 76, 0, 0.1);
+            padding: 0.8rem 1.5rem;
+            border-radius: 20px;
+            border: 2px solid #f74c00;
+            color: #fff;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .angle-value {
+            color: #f74c00;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            text-shadow: 0 0 10px rgba(247, 76, 0, 0.5);
+        }
+
+        /* GPS Tracking Styles */
+        .gps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .gps-section {
+            background: rgba(218, 165, 32, 0.05);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #daa520;
+        }
+
+        .gps-label {
+            color: #daa520;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .gps-input {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #666;
+            border-radius: 8px;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+        }
+
+        .gps-input:focus {
+            outline: none;
+            border-color: #f74c00;
+            box-shadow: 0 0 10px rgba(247, 76, 0, 0.3);
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .preset-btn {
+            background: rgba(218, 165, 32, 0.2);
+            border: 1px solid #daa520;
+            color: #daa520;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .preset-btn:hover {
+            background: rgba(218, 165, 32, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* Status Display */
+        .status-display {
+            background: rgba(247, 76, 0, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid #f74c00;
+            margin: 2rem 0;
+            text-align: left;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-item {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #666;
+        }
+
+        .status-label {
+            color: #daa520;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-value {
+            color: #f74c00;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* IP Address Display */
+        .ip-display {
+            background: rgba(247, 76, 0, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #f74c00;
+            margin: 1rem 0;
+        }
+
+        .ip-label {
+            color: #daa520;
+            font-size: clamp(0.9rem, 3vw, 1rem);
+            margin-bottom: 0.5rem;
+        }
+
+        .ip-value {
+            color: #fff;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+        }
+
+        /* Button Styles */
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .celebration-btn {
+            background: linear-gradient(45deg, #f74c00, #ce422b);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 4px 12px rgba(247, 76, 0, 0.4);
+            min-width: 160px;
+            min-height: 48px;
+        }
+
+        .celebration-btn:hover,
+        .celebration-btn:focus {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(247, 76, 0, 0.6);
+            outline: 2px solid #daa520;
+        }
+
+        .celebration-btn:active {
+            transform: scale(0.98);
+        }
+
+        .track-btn {
+            background: linear-gradient(45deg, #daa520, #b8860b);
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            min-width: 200px;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-8px); }
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .servo-grid, .gps-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .celebration-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0;
+                padding: 1rem;
+            }
+        }
+
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            .rust-logo {
+                animation: none;
+            }
+            
+            .celebration-btn:hover {
+                transform: none;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: " ⏳";
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="rust-logo">🦀</div>
+        <h1 class="main-title">GPS Servo Tracking System</h1>
+        <p class="subtitle">Advanced GPS-based servo tracking with azimuth & elevation control!</p>
+
+        <!-- Manual Servo Control Section -->
+        <div class="control-section">
+            <h2 class="section-title">🔧 Manual Servo Control</h2>
+            
+            <div class="servo-grid">
+                <!-- Servo A Control -->
+                <div class="servo-control">
+                    <div class="servo-label">🔩 Azimuth Servo (Pan)</div>
+                    <div class="servo-container">
+                        <input type="range" min="0" max="180" value="90" class="servo-slider" id="servoSliderA">
+                        <div class="servo-display">
+                            <span class="angle-value" id="angleValueA">90</span>°
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Servo B Control -->
+                <div class="servo-control">
+                    <div class="servo-label">⚙️ Elevation Servo (Tilt)</div>
+                    <div class="servo-container">
+                        <input type="range" min="0" max="180" value="90" class="servo-slider" id="servoSliderB">
+                        <div class="servo-display">
+                            <span class="angle-value" id="angleValueB">90</span>°
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GPS Tracking Section -->
+        <div class="control-section">
+            <h2 class="section-title">🛰️ GPS Tracking Control</h2>
+            
+            <div class="gps-grid">
+                <!-- Observer Location -->
+                <div class="gps-section">
+                    <div class="gps-label">📍 Observer Location (Your Servos)</div>
+                    <input type="text" class="gps-input" id="obsLat" placeholder="Latitude (46.065799)" value="46.065799">
+                    <input type="text" class="gps-input" id="obsLon" placeholder="Longitude (18.169254)" value="18.169254">
+                    <input type="text" class="gps-input" id="obsAlt" placeholder="Altitude (134.57)" value="134.57">
+                    
+                    <div class="preset-buttons">
+                        <button class="preset-btn" onclick="setObserver('pecs')">📍 Pécs</button>
+                        <button class="preset-btn" onclick="setObserver('budapest')">🏛️ Budapest</button>
+                        <button class="preset-btn" onclick="getCurrentLocation()">🌍 Auto GPS</button>
+                    </div>
+                </div>
+
+                <!-- Target Location -->
+                <div class="gps-section">
+                    <div class="gps-label">🎯 Target Location (Track This)</div>
+                    <input type="text" class="gps-input" id="targetLat" placeholder="Target Latitude">
+                    <input type="text" class="gps-input" id="targetLon" placeholder="Target Longitude">
+                    <input type="text" class="gps-input" id="targetAlt" placeholder="Target Altitude" value="100">
+                    
+                    <div class="preset-buttons">
+                        <button class="preset-btn" onclick="setTarget('budapest')">🏛️ Budapest</button>
+                        <button class="preset-btn" onclick="setTarget('paris')">🗼 Paris</button>
+                        <button class="preset-btn" onclick="setTarget('london')">🏰 London</button>
+                        <button class="preset-btn" onclick="setTarget('vienna')">🎼 Vienna</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="celebration-btn track-btn" onclick="trackGPSTarget()">🛰️ TRACK GPS TARGET 🛰️</button>
+        </div>
+
+        <!-- Status Display -->
+        <div class="control-section">
+            <h2 class="section-title">📊 System Status</h2>
+            
+            <div class="status-display">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">Azimuth Angle</div>
+                        <div class="status-value" id="statusAzimuth">---°</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Elevation Angle</div>
+                        <div class="status-value" id="statusElevation">---°</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Servo A Position</div>
+                        <div class="status-value" id="statusServoA">90°</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Servo B Position</div>
+                        <div class="status-value" id="statusServoB">90°</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Tracking Mode</div>
+                        <div class="status-value" id="statusMode">Manual</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">Last Update</div>
+                        <div class="status-value" id="statusTime">---</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ip-display">
+            <div class="ip-label">Your IP Address:</div>
+            <div class="ip-value" id="clientIP">Detecting...</div>
+        </div>
+
+        <div class="button-container">
+            <button class="celebration-btn" onclick="testServoA()">🔩 TEST AZIMUTH 🔩</button>
+            <button class="celebration-btn" onclick="testServoB()">⚙️ TEST ELEVATION ⚙️</button>
+            <button class="celebration-btn" onclick="testBothServos()">🔧 TEST BOTH SERVOS 🔧</button>
+            <button class="celebration-btn" onclick="homePosition()">🏠 HOME POSITION 🏠</button>
+            <button class="celebration-btn" onclick="showDetailedStatus()">📊 DETAILED STATUS 📊</button>
+        </div>
+    </div>
+
+    <script>
+        let clientIPElement = document.getElementById('clientIP');
+        
+        // Servo elements
+        let servoSliderA = document.getElementById('servoSliderA');
+        let angleValueA = document.getElementById('angleValueA');
+        let servoSliderB = document.getElementById('servoSliderB');
+        let angleValueB = document.getElementById('angleValueB');
+        
+        // GPS elements
+        let obsLat = document.getElementById('obsLat');
+        let obsLon = document.getElementById('obsLon');
+        let obsAlt = document.getElementById('obsAlt');
+        let targetLat = document.getElementById('targetLat');
+        let targetLon = document.getElementById('targetLon');
+        let targetAlt = document.getElementById('targetAlt');
+        
+        // Status elements
+        let statusAzimuth = document.getElementById('statusAzimuth');
+        let statusElevation = document.getElementById('statusElevation');
+        let statusServoA = document.getElementById('statusServoA');
+        let statusServoB = document.getElementById('statusServoB');
+        let statusMode = document.getElementById('statusMode');
+        let statusTime = document.getElementById('statusTime');
+
+        // Preset locations
+        const presets = {
+            pecs: { lat: 46.065799, lon: 18.169254, alt: 134.57 },
+            budapest: { lat: 47.4979, lon: 19.0402, alt: 102.0 },
+            paris: { lat: 48.8566, lon: 2.3522, alt: 35.0 },
+            london: { lat: 51.5074, lon: -0.1278, alt: 11.0 },
+            vienna: { lat: 48.2082, lon: 16.3738, alt: 171.0 }
+        };
+
+        // Get client IP address
+        async function getClientIP() {
+            try {
+                const hostname = window.location.hostname;
+                const ipPattern = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+                
+                if (ipPattern.test(hostname)) {
+                    clientIPElement.textContent = hostname;
+                    return hostname;
+                }
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlIP = urlParams.get('ip');
+                if (urlIP && ipPattern.test(urlIP)) {
+                    clientIPElement.textContent = urlIP;
+                    return urlIP;
+                }
+                
+                const host = window.location.host;
+                const hostIP = host.split(':')[0];
+                
+                if (ipPattern.test(hostIP)) {
+                    clientIPElement.textContent = hostIP;
+                    return hostIP;
+                }
+                
+                const ipServices = [
+                    'https://api.ipify.org?format=json',
+                    'https://ipapi.co/json/',
+                    'https://jsonip.com'
+                ];
+                
+                for (let service of ipServices) {
+                    try {
+                        const response = await fetch(service);
+                        const data = await response.json();
+                        const ip = data.ip || data.IPv4 || data.query;
+                        if (ip) {
+                            clientIPElement.textContent = `${ip} (public)`;
+                            return ip;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                clientIPElement.textContent = 'Unable to detect';
+            } catch (error) {
+                clientIPElement.textContent = 'Detection failed';
+            }
+        }
+
+        // Initialize IP detection
+        getClientIP();
+
+        // Servo slider handlers
+        servoSliderA.addEventListener('input', function() {
+            angleValueA.textContent = this.value;
+            statusServoA.textContent = this.value + '°';
+        });
+
+        servoSliderA.addEventListener('change', function() {
+            statusMode.textContent = 'Manual';
+            sendServoUpdate();
+        });
+
+        servoSliderB.addEventListener('input', function() {
+            angleValueB.textContent = this.value;
+            statusServoB.textContent = this.value + '°';
+        });
+
+        servoSliderB.addEventListener('change', function() {
+            statusMode.textContent = 'Manual';
+            sendServoUpdate();
+        });
+
+        // Combined servo update function
+        async function sendServoUpdate() {
+            const angleA = servoSliderA.value;
+            const angleB = servoSliderB.value;
+            
+            try {
+                const response = await fetch('/servo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        angle: angleA.toString(),
+                        angle_b: angleB.toString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log(`Servo A: ${angleA}°, Servo B: ${angleB}°`);
+                    updateStatusTime();
+                } else {
+                    alert('Failed to set servo angles. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error setting servo angles:', error);
+                alert('Connection error. Please check your network.');
+            }
+        }
+
+        // GPS tracking function
+        async function trackGPSTarget() {
+            if (!targetLat.value || !targetLon.value) {
+                alert('Please enter target coordinates!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/gps', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        target_lat: targetLat.value,
+                        target_lon: targetLon.value,
+                        target_alt: targetAlt.value || '100',
+                        observer_lat: obsLat.value,
+                        observer_lon: obsLon.value,
+                        observer_alt: obsAlt.value
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Update status display
+                    statusAzimuth.textContent = result.azimuth + '°';
+                    statusElevation.textContent = result.elevation + '°';
+                    statusServoA.textContent = result.servo_a + '°';
+                    statusServoB.textContent = result.servo_b + '°';
+                    statusMode.textContent = 'GPS Tracking';
+                    
+                    // Update sliders
+                    servoSliderA.value = result.servo_a;
+                    servoSliderB.value = result.servo_b;
+                    angleValueA.textContent = result.servo_a;
+                    angleValueB.textContent = result.servo_b;
+                    
+                    updateStatusTime();
+                    console.log(`GPS Track: Az=${result.azimuth}°, El=${result.elevation}° → Servos A=${result.servo_a}°, B=${result.servo_b}°`);
+                } else {
+                    alert('Failed to track GPS target. Please check coordinates.');
+                }
+            } catch (error) {
+                console.error('Error tracking GPS target:', error);
+                alert('Connection error. Please check your network.');
+            }
+        }
+
+        // Preset location functions
+        function setObserver(location) {
+            const preset = presets[location];
+            obsLat.value = preset.lat;
+            obsLon.value = preset.lon;
+            obsAlt.value = preset.alt;
+        }
+
+        function setTarget(location) {
+            const preset = presets[location];
+            targetLat.value = preset.lat;
+            targetLon.value = preset.lon;
+            targetAlt.value = preset.alt;
+        }
+
+        // Get current location using browser GPS
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        obsLat.value = position.coords.latitude.toFixed(6);
+                        obsLon.value = position.coords.longitude.toFixed(6);
+                        obsAlt.value = position.coords.altitude ? position.coords.altitude.toFixed(2) : '100';
+                        alert('Location updated from GPS!');
+                    },
+                    (error) => {
+                        alert('Unable to get location: ' + error.message);
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        // Test functions
+        async function testServoA() {
+            const originalAngle = servoSliderA.value;
+            statusMode.textContent = 'Testing Azimuth';
+            
+            servoSliderA.value = 0;
+            angleValueA.textContent = '0';
+            statusServoA.textContent = '0°';
+            sendServoUpdate();
+            
+            setTimeout(() => {
+                servoSliderA.value = 180;
+                angleValueA.textContent = '180';
+                statusServoA.textContent = '180°';
+                sendServoUpdate();
+                
+                setTimeout(() => {
+                    servoSliderA.value = originalAngle;
+                    angleValueA.textContent = originalAngle;
+                    statusServoA.textContent = originalAngle + '°';
+                    statusMode.textContent = 'Manual';
+                    sendServoUpdate();
+                }, 1000);
+            }, 1000);
+        }
+
+        async function testServoB() {
+            const originalAngle = servoSliderB.value;
+            statusMode.textContent = 'Testing Elevation';
+            
+            servoSliderB.value = 0;
+            angleValueB.textContent = '0';
+            statusServoB.textContent = '0°';
+            sendServoUpdate();
+            
+            setTimeout(() => {
+                servoSliderB.value = 180;
+                angleValueB.textContent = '180';
+                statusServoB.textContent = '180°';
+                sendServoUpdate();
+                
+                setTimeout(() => {
+                    servoSliderB.value = originalAngle;
+                    angleValueB.textContent = originalAngle;
+                    statusServoB.textContent = originalAngle + '°';
+                    statusMode.textContent = 'Manual';
+                    sendServoUpdate();
+                }, 1000);
+            }, 1000);
+        }
+
+        async function testBothServos() {
+            const originalA = servoSliderA.value;
+            const originalB = servoSliderB.value;
+            statusMode.textContent = 'Testing Both';
+            
+            // Both to 0°
+            servoSliderA.value = 0;
+            servoSliderB.value = 0;
+            angleValueA.textContent = '0';
+            angleValueB.textContent = '0';
+            statusServoA.textContent = '0°';
+            statusServoB.textContent = '0°';
+            sendServoUpdate();
+            
+            setTimeout(() => {
+                // Both to 180°
+                servoSliderA.value = 180;
+                servoSliderB.value = 180;
+                angleValueA.textContent = '180';
+                angleValueB.textContent = '180';
+                statusServoA.textContent = '180°';
+                statusServoB.textContent = '180°';
+                sendServoUpdate();
+                
+                setTimeout(() => {
+                    // Both to 90°
+                    servoSliderA.value = 90;
+                    servoSliderB.value = 90;
+                    angleValueA.textContent = '90';
+                    angleValueB.textContent = '90';
+                    statusServoA.textContent = '90°';
+                    statusServoB.textContent = '90°';
+                    sendServoUpdate();
+                    
+                    setTimeout(() => {
+                        // Back to original positions
+                        servoSliderA.value = originalA;
+                        servoSliderB.value = originalB;
+                        angleValueA.textContent = originalA;
+                        angleValueB.textContent = originalB;
+                        statusServoA.textContent = originalA + '°';
+                        statusServoB.textContent = originalB + '°';
+                        statusMode.textContent = 'Manual';
+                        sendServoUpdate();
+                    }, 1000);
+                }, 1000);
+            }, 1000);
+        }
+
+        function homePosition() {
+            servoSliderA.value = 90;
+            servoSliderB.value = 90;
+            angleValueA.textContent = '90';
+            angleValueB.textContent = '90';
+            statusServoA.textContent = '90°';
+            statusServoB.textContent = '90°';
+            statusMode.textContent = 'Home Position';
+            sendServoUpdate();
+        }
+
+        function updateStatusTime() {
+            statusTime.textContent = new Date().toLocaleTimeString();
+        }
+
+        async function showDetailedStatus() {
+            try {
+                const ip = clientIPElement.textContent;
+                const servoAngleA = servoSliderA.value;
+                const servoAngleB = servoSliderB.value;
+                const az = statusAzimuth.textContent;
+                const el = statusElevation.textContent;
+                const mode = statusMode.textContent;
+                
+                alert(`🦀 Detailed System Status 🦀\n` +
+                      `═══════════════════════════════\n` +
+                      `Mode: ${mode}\n` +
+                      `Azimuth Servo: ${servoAngleA}°\n` +
+                      `Elevation Servo: ${servoAngleB}°\n` +
+                      `Target Azimuth: ${az}\n` +
+                      `Target Elevation: ${el}\n` +
+                      `Observer: ${obsLat.value}, ${obsLon.value}\n` +
+                      `Target: ${targetLat.value || 'None'}, ${targetLon.value || 'None'}\n` +
+                      `Your IP: ${ip}\n` +
+                      `Time: ${new Date().toLocaleString()}`);
+            } catch (error) {
+                alert('Failed to get detailed status. Please try again.');
+            }
+        }
+
+        // Initialize status time
+        updateStatusTime();
+        
+        // Update time every minute
+        setInterval(updateStatusTime, 60000);
+
+        // Handle touch events for mobile
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.classList.contains('celebration-btn')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
