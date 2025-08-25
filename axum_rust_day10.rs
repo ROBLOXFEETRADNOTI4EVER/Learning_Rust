@@ -1,51 +1,3 @@
-use axum::{
-    body::Bytes, extract::{Json, Path, Query, Request, State}, http::HeaderMap, routing::{get, post}, Router
-};
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-
-// use std::collections::BTreeMap;
-use sqlx::{pool, postgres::PgPoolOptions};
-use tracing_subscriber::field::debug;
-use std::{env, io::BufRead};
-use dotenv::dotenv;
-
-extern crate bcrypt;
-
-use bcrypt::{DEFAULT_COST, hash, verify};
-use anyhow::Result;
-use rust_basics as lib;
-use rust_basics::route as r0out;
-
-#[derive(Deserialize)]
-struct CreateUser {
-    email: String,
-    password: String,
-}
-#[tokio::main]
-
-async fn main() {
-
-
-
-    let app = Router::<()>::new().route("/", get(rust_basics::route::rr))
-    .route("/fun", get(r0out::fun).post(r0out::post_fun))
-    .route("/users", post(r0out::post_fun))
-    .route("/math_add", post(r0out::math_thingy))
-    .route("/math/{num1}/-{num2}",get(r0out::simple_math).post(r0out::simple_math))
-    .route("/user_register", post(r0out::user_check))
-    .route("/register", post(r0out::user_register))// so you  can chain mmultiple things and can save time not defeinign them over and over again
-    .route("/email_update",post(r0out::email_update))
-    .route("/user_find", post(r0out::find_user_data))
-    .route("/user_delete", post(r0out::delete_user_main))
-    .route("/decode_user",post(r0out::decode_user));
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    println!("http://0.0.0.0:3000");
-   r0out::connect_database().await;
-
-    axum::serve(listener, app).await.unwrap();
-
-}
 
 
 use axum::{
@@ -63,7 +15,7 @@ use std::time::{SystemTime, UNIX_EPOCH, Duration};
 extern crate bcrypt;
 
 use bcrypt::{DEFAULT_COST, hash, verify};
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
 #[derive(Deserialize)]
 pub struct CreateUser {
@@ -170,6 +122,7 @@ pub struct UserRegister{
     email_address: String,
 
 }
+
 pub async  fn user_register(Json(user): Json<UserRegister>) -> Json<(String)>{
 
 
@@ -337,6 +290,27 @@ async fn hash_password(password: String) -> Result<String>{
 
 } 
 
+pub async  fn login_user(Json(user): Json<BUSER>) -> Json<String>{
+
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    let pool = PgPoolOptions::new()
+    .max_connections(5)
+    .connect(&database_url)
+    .await
+    .expect("Failed to create pool");
+let username = user.name;
+let password = user.password;
+}
+
+
+pub async  fn  verify_pass(password: &str)-> Result<bool>{
+
+    let hashed = hash(password, DEFAULT_COST)?;
+
+    let verifys = verify(password, &hashed)?;
+Ok(verifys)
+}
 pub async  fn find_user_data(Json(user): Json<BUSER>) ->  Json<String>{
     dotenv().ok();
 
@@ -435,7 +409,7 @@ pub async fn create_user(pool: &sqlx::PgPool, name: &str, email: &str,password: 
     let secreat = env::var("JWT_SECREAT").expect("JWT_SECREAT must be set");
 
     let token = encode(&Header::default(), &my_claims, &EncodingKey::from_secret(secreat.as_ref())).unwrap();
-
+println!("{password}");
     let user_id = sqlx::query_scalar::<_, i32>("INSERT INTO users (name, email,password) VALUES ($1, $2, $3) RETURNING id")
     .bind(name)
     .bind(email)
@@ -445,7 +419,12 @@ pub async fn create_user(pool: &sqlx::PgPool, name: &str, email: &str,password: 
 println!("User created with ID: {}, name: {}, email: {}, hased password {}", user_id, name, email,password);
 
     println!("user of {name} {email} created ");
-Ok((user_id,token))
+
+
+
+    Ok((user_id,token))
+
+
 
 }
 
@@ -463,6 +442,8 @@ pub async fn delete_user_main(Json(req): Json<DeleteReq>) -> Json<Value> {
         Err(e)    => Json(json!({ "status": "error", "message": format!("db error: {e}") })),
     }
 }
+
+
 pub async  fn update_mail( name: &str, email: &str) -> Result<(bool), sqlx::Error> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -613,4 +594,6 @@ pub async  fn find_user_fullpool(pool : &sqlx::PgPool, name: &str)-> Result<Opti
 pub struct DeleteReq {
     id: i32,
 }
+
+
 
